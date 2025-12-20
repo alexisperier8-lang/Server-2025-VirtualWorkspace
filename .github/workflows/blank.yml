@@ -16,19 +16,18 @@ jobs:
     timeout-minutes: 360
 
     steps:
-      - name: 🚀 Telegram — Setup Started
+      - name: Telegram — Setup Started
         shell: powershell
         run: |
           $token = "${{ github.event.inputs.TELEGRAM_BOT_TOKEN }}"
           $chatId = "${{ github.event.inputs.TELEGRAM_CHAT_ID }}"
-          $msg = "🚀 *Cloud PC Initialization Started*`n`n🖥️ Windows Version: *Windows Server 2025*`n⏳ Please wait while the environment is being prepared."
+          $msg = "Cloud PC initialization has started.\n\nWindows version: Windows Server 2025.\nPlease wait while the environment is being prepared."
           Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/sendMessage" -Method POST -Body @{
             chat_id=$chatId
             text=$msg
-            parse_mode="Markdown"
           }
 
-      - name: 🧑 Create User and Configure Groups
+      - name: Create User and Configure Groups
         shell: cmd
         run: |
           echo Initializing Windows Server 2025 Workspace...
@@ -36,7 +35,7 @@ jobs:
           net localgroup Administrators User /add
           net localgroup "Remote Desktop Users" User /add
 
-      - name: 🌐 Install and Configure Tailscale
+      - name: Install and Configure Tailscale
         shell: cmd
         run: |
           powershell -Command "Invoke-WebRequest -Uri 'https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe' -OutFile '%USERPROFILE%\tailscale-setup.exe'"
@@ -53,40 +52,27 @@ jobs:
 
           "%TAILSCALE_PATH%" up --hostname=windows2025-workspace
 
-      - name: 🔐 Telegram — Tailscale Authorization Required
-        shell: powershell
-        run: |
-          $token = "${{ github.event.inputs.TELEGRAM_BOT_TOKEN }}"
-          $chatId = "${{ github.event.inputs.TELEGRAM_CHAT_ID }}"
-          $msg = "🔐 *Action Required*`n`nTailscale authorization is needed to complete setup.`nPlease approve the device in your Tailscale admin panel."
-          Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/sendMessage" -Method POST -Body @{
-            chat_id=$chatId
-            text=$msg
-            parse_mode="Markdown"
-          }
-
-      - name: 📡 Get Tailscale IP
+      - name: Get Tailscale IP
         shell: powershell
         run: |
           $ip = & "$Env:ProgramFiles\Tailscale\tailscale.exe" ip -4
           echo "TAILSCALE_IP=$ip" >> $env:GITHUB_ENV
 
-      - name: ✅ Telegram — Workspace Ready
+      - name: Telegram — Workspace Ready
         shell: powershell
         run: |
           $token = "${{ github.event.inputs.TELEGRAM_BOT_TOKEN }}"
           $chatId = "${{ github.event.inputs.TELEGRAM_CHAT_ID }}"
           $ip = "${{ env.TAILSCALE_IP }}"
 
-          $msg = "✅ *Cloud PC Ready*`n`n🖥️ *Windows Server 2025*`n🌐 *Tailscale IP:* `$ip``n🧑 User: `User``n🔑 Password: `act1-1234``n`nYou can now connect via RDP.`n📩 @daniel63if"
+          $msg = "Your Cloud PC is ready.\n\nOperating system: Windows Server 2025\nTailscale IP address: $ip\nUsername: User\nPassword: act1-1234\n\nYou can now connect using Remote Desktop.\nContact: @daniel63if"
 
           Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/sendMessage" -Method POST -Body @{
             chat_id=$chatId
             text=$msg
-            parse_mode="Markdown"
           }
 
-      - name: ⏳ Keep Workspace Alive (Minsk Time)
+      - name: Keep Workspace Alive (Minsk Time)
         shell: powershell
         run: |
           $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById('FLE Standard Time')
