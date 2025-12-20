@@ -1,92 +1,98 @@
-name: Windows Server 2022 Workspace (CMD + PowerShell Loop)
+name: Windows Server 2025 Workspace (CMD + PowerShell Loop)
 
 on:
   workflow_dispatch:
+    inputs:
+      TELEGRAM_BOT_TOKEN:
+        description: 'Telegram Bot Token'
+        required: true
+      TELEGRAM_CHAT_ID:
+        description: 'Telegram Chat ID'
+        required: true
 
 jobs:
   setup-workspace:
-    runs-on: windows-2022
+    runs-on: windows-2025
     timeout-minutes: 360
 
     steps:
+      - name: 🚀 Telegram — Setup Started
+        shell: powershell
+        run: |
+          $token = "${{ github.event.inputs.TELEGRAM_BOT_TOKEN }}"
+          $chatId = "${{ github.event.inputs.TELEGRAM_CHAT_ID }}"
+          $msg = "🚀 *Cloud PC Initialization Started*`n`n🖥️ Windows Version: *Windows Server 2025*`n⏳ Please wait while the environment is being prepared."
+          Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/sendMessage" -Method POST -Body @{
+            chat_id=$chatId
+            text=$msg
+            parse_mode="Markdown"
+          }
+
       - name: 🧑 Create User and Configure Groups
         shell: cmd
         run: |
-          echo 🔧 Initializing Windows Server 2022 Workspace...
-          echo 👤 Creating local user 'User'...
+          echo Initializing Windows Server 2025 Workspace...
           net user User act1-1234 /add
-          echo ✅ User 'User' created.
-
-          echo 🔐 Adding 'User' to Administrators group...
           net localgroup Administrators User /add
-          echo ✅ User added to Administrators.
-
-          echo 🔐 Adding 'User' to Remote Desktop Users group...
           net localgroup "Remote Desktop Users" User /add
-          echo ✅ User added to Remote Desktop Users.
-
-      - name: 🎵 Configure Audio Service
-        shell: cmd
-        run: |
-          echo 🔊 Configuring Windows Audio service to start automatically...
-          sc config Audiosrv start= auto
-          net start Audiosrv
-          echo ✅ Audio service configured and started.
 
       - name: 🌐 Install and Configure Tailscale
         shell: cmd
         run: |
-          echo 🔧 Downloading Tailscale installer...
           powershell -Command "Invoke-WebRequest -Uri 'https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe' -OutFile '%USERPROFILE%\tailscale-setup.exe'"
-
-          echo 💻 Installing Tailscale silently...
           "%USERPROFILE%\tailscale-setup.exe" /quiet
-
-          echo ⏳ Waiting 20 seconds for Tailscale services to initialize...
           powershell -Command "Start-Sleep -Seconds 20"
 
-          echo 🔍 Detecting installed Tailscale path...
           if exist "%ProgramFiles%\Tailscale\tailscale.exe" (
               set "TAILSCALE_PATH=%ProgramFiles%\Tailscale\tailscale.exe"
           ) else if exist "%ProgramFiles(x86)%\Tailscale\tailscale.exe" (
               set "TAILSCALE_PATH=%ProgramFiles(x86)%\Tailscale\tailscale.exe"
           ) else (
-              echo ❌ Tailscale executable not found!
               exit /b 1
           )
 
-          echo 🔗 Starting Tailscale for secure remote access...
-          "%TAILSCALE_PATH%" up --hostname=windows2022-workspace
-          echo ✅ Tailscale is running.
+          "%TAILSCALE_PATH%" up --hostname=windows2025-workspace
 
-      - name: 💬 Display Workspace Info
-        shell: cmd
-        run: |
-          echo ===============================================
-          echo 🏢 Windows Server 2022 Workspace Ready
-          echo -----------------------------------------------
-          echo 💻 Login Information:
-          echo     Username: User
-          echo     Password: act1-1234
-          echo     RDP access enabled
-          echo.
-          echo 🌐 Tailscale hostname: windows2022-workspace
-          echo -----------------------------------------------
-          echo 🌟🐻🧸 MADE BY DANIEL 64. DM IN TELEGRAM @daniel64idk IF SOMETHING IS WRONG OR NOT WORKING 
-          echo ===============================================
-
-      - name: ⏳ Display Minsk Time and Keep-Alive Loop
+      - name: 🔐 Telegram — Tailscale Authorization Required
         shell: powershell
         run: |
-          # Show Minsk timezone end time
+          $token = "${{ github.event.inputs.TELEGRAM_BOT_TOKEN }}"
+          $chatId = "${{ github.event.inputs.TELEGRAM_CHAT_ID }}"
+          $msg = "🔐 *Action Required*`n`nTailscale authorization is needed to complete setup.`nPlease approve the device in your Tailscale admin panel."
+          Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/sendMessage" -Method POST -Body @{
+            chat_id=$chatId
+            text=$msg
+            parse_mode="Markdown"
+          }
+
+      - name: 📡 Get Tailscale IP
+        shell: powershell
+        run: |
+          $ip = & "$Env:ProgramFiles\Tailscale\tailscale.exe" ip -4
+          echo "TAILSCALE_IP=$ip" >> $env:GITHUB_ENV
+
+      - name: ✅ Telegram — Workspace Ready
+        shell: powershell
+        run: |
+          $token = "${{ github.event.inputs.TELEGRAM_BOT_TOKEN }}"
+          $chatId = "${{ github.event.inputs.TELEGRAM_CHAT_ID }}"
+          $ip = "${{ env.TAILSCALE_IP }}"
+
+          $msg = "✅ *Cloud PC Ready*`n`n🖥️ *Windows Server 2025*`n🌐 *Tailscale IP:* `$ip``n🧑 User: `User``n🔑 Password: `act1-1234``n`nYou can now connect via RDP.`n📩 @daniel63if"
+
+          Invoke-RestMethod -Uri "https://api.telegram.org/bot$token/sendMessage" -Method POST -Body @{
+            chat_id=$chatId
+            text=$msg
+            parse_mode="Markdown"
+          }
+
+      - name: ⏳ Keep Workspace Alive (Minsk Time)
+        shell: powershell
+        run: |
           $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById('FLE Standard Time')
           $endTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date).AddHours(6), $tz.Id)
-          Write-Host "🕐 Workspace will remain active until (Minsk time): $endTime"
+          Write-Host "Workspace active until (Minsk time): $endTime"
 
-          # Print Enjoy! once
-          Write-Host "Enjoy!"
-
-          # Infinite silent loop to keep workspace alive
           while ($true) {
               Start-Sleep -Seconds 10
           }
