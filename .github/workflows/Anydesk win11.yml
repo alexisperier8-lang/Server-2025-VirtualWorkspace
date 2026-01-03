@@ -75,7 +75,7 @@ jobs:
           Write-Host "Password: MR.English2008"
           Write-Host "========================================"
           
-          New-Object -ComObject Shell.Application).MinimizeAll()
+          
           
           while ((Get-Date) -lt $endTime) {
               Write-Host "Online | ID: $env:ANYDESK_ID | $(Get-Date)"
